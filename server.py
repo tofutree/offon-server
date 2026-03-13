@@ -10,7 +10,6 @@ from datetime import datetime
 app = Flask(__name__)
 CORS(app)
 
-# Firebase 초기화 (환경변수에서 읽기)
 firebase_key = os.environ.get('FIREBASE_KEY')
 if firebase_key:
     key_dict = json.loads(firebase_key)
@@ -30,7 +29,7 @@ def index():
 @app.route('/mms', methods=['POST'])
 def receive_mms():
     from_number = request.form.get('From', '')
-    body = request.form.get('Body', '')
+    body = request.form.get('Body', '').strip()
     num_media = int(request.form.get('NumMedia', 0))
 
     media_url = None
@@ -52,10 +51,17 @@ def receive_mms():
     user_doc = user_query[0]
     user_data = user_doc.to_dict()
 
+    # #profile 기능
+    if '#profile' in body.lower() and media_url and media_type and media_type.startswith('image/'):
+        user_doc.reference.update({'profile_photo': media_url})
+        resp = MessagingResponse()
+        resp.message("✓ profile photo updated on off/on")
+        return str(resp)
+
     post = {
         'user_id': user_doc.id,
         'username': user_data.get('username', 'anonymous'),
-        'handle': user_data.get('handle', '@unknown'),
+        'handle': user_data.get('handle', 'unknown'),
         'is_public': user_data.get('is_public', True),
         'text': body,
         'media_url': media_url,
@@ -127,6 +133,9 @@ def register():
         'is_public': is_public,
         'device': device,
         'post_count': 0,
+        'follower_count': 0,
+        'following_count': 0,
+        'profile_photo': None,
         'created_at': datetime.utcnow()
     }
 
@@ -154,6 +163,98 @@ def get_user(handle):
         user['last_posted'] = user['last_posted'].isoformat()
 
     return jsonify(user)
+
+
+@app.route('/api/follow', methods=['POST'])
+def follow():
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    data = request.json
+    from_handle = data.get('from_handle')
+    to_handle = data.get('to_handle')
+
+    if not from_handle or not to_handle or from_handle == to_handle:
+        return jsonify({'error': 'invalid handles'}), 400
+
+    # 이미 팔로우 중인지 확인
+    existing = db.collection('follows').where('from_handle', '==', from_handle).where('to_handle', '==', to_handle).limit(1).get()
+    if existing:
+        return jsonify({'error': 'already following'}), 409
+
+    # 팔로우 관계 저장
+    db.collection('follows').add({
+        'from_handle': from_handle,
+        'to_handle': to_handle,
+        'created_at': datetime.utcnow()
+    })
+
+    # 카운트 업데이트
+    from_users = db.collection('users').where('handle', '==', from_handle).limit(1).get()
+    to_users = db.collection('users').where('handle', '==', to_handle).limit(1).get()
+    if from_users:
+        from_users[0].reference.update({'following_count': firestore.Increment(1)})
+    if to_users:
+        to_users[0].reference.update({'follower_count': firestore.Increment(1)})
+
+    return jsonify({'success': True})
+
+
+@app.route('/api/unfollow', methods=['POST'])
+def unfollow():
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    data = request.json
+    from_handle = data.get('from_handle')
+    to_handle = data.get('to_handle')
+
+    follows = db.collection('follows').where('from_handle', '==', from_handle).where('to_handle', '==', to_handle).limit(1).get()
+    if not follows:
+        return jsonify({'error': 'not following'}), 404
+
+    follows[0].reference.delete()
+
+    from_users = db.collection('users').where('handle', '==', from_handle).limit(1).get()
+    to_users = db.collection('users').where('handle', '==', to_handle).limit(1).get()
+    if from_users:
+        from_users[0].reference.update({'following_count': firestore.Increment(-1)})
+    if to_users:
+        to_users[0].reference.update({'follower_count': firestore.Increment(-1)})
+
+    return jsonify({'success': True})
+
+
+@app.route('/api/is_following', methods=['GET'])
+def is_following():
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    from_handle = request.args.get('from_handle')
+    to_handle = request.args.get('to_handle')
+
+    existing = db.collection('follows').where('from_handle', '==', from_handle).where('to_handle', '==', to_handle).limit(1).get()
+    return jsonify({'is_following': len(existing) > 0})
+
+
+@app.route('/api/followers/<handle>', methods=['GET'])
+def get_followers(handle):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    follows = db.collection('follows').where('to_handle', '==', handle).get()
+    handles = [f.to_dict()['from_handle'] for f in follows]
+    return jsonify({'followers': handles})
+
+
+@app.route('/api/following/<handle>', methods=['GET'])
+def get_following(handle):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    follows = db.collection('follows').where('from_handle', '==', handle).get()
+    handles = [f.to_dict()['to_handle'] for f in follows]
+    return jsonify({'following': handles})
 
 
 if __name__ == '__main__':
