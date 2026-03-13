@@ -21,7 +21,7 @@ else:
     db = None
     print("WARNING: FIREBASE_KEY not set")
 
-OFFON_NUMBER = os.environ.get('OFFON_NUMBER', '+15707077010')
+OFFON_NUMBER = os.environ.get('OFFON_NUMBER', '+18448860777')
 
 @app.route('/', methods=['GET'])
 def index():
