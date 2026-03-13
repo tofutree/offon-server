@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from twilio.twiml.messaging_response import MessagingResponse
 import firebase_admin
 from firebase_admin import credentials, firestore
@@ -7,6 +8,7 @@ import json
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)
 
 # Firebase 초기화 (환경변수에서 읽기)
 firebase_key = os.environ.get('FIREBASE_KEY')
