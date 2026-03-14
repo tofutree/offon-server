@@ -90,9 +90,27 @@ def get_posts():
 
     limit = int(request.args.get('limit', 20))
     handle = request.args.get('handle', None)
+    requester = request.args.get('requester', None)  # 요청하는 사람의 handle
     posts_ref = db.collection('posts')
 
     if handle:
+        # 해당 유저가 private인지 확인
+        user_query = db.collection('users').where('handle', '==', handle).limit(1).get()
+        if user_query:
+            user_data = user_query[0].to_dict()
+            is_public = user_data.get('is_public', True)
+
+            if not is_public:
+                # private 계정 → 본인이거나 팔로워만 허용
+                if requester == handle:
+                    pass  # 본인은 OK
+                elif requester:
+                    follow_check = db.collection('follows').where('from_handle', '==', requester).where('to_handle', '==', handle).limit(1).get()
+                    if not follow_check:
+                        return jsonify({'posts': [], 'private': True})
+                else:
+                    return jsonify({'posts': [], 'private': True})
+
         query = posts_ref.where('handle', '==', handle).order_by('created_at', direction=firestore.Query.DESCENDING).limit(limit)
     else:
         query = posts_ref.where('is_public', '==', True).order_by('created_at', direction=firestore.Query.DESCENDING).limit(limit)
