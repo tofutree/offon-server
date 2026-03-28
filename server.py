@@ -32,6 +32,8 @@ R2_SECRET_KEY = os.environ.get('R2_SECRET_ACCESS_KEY', '')
 R2_ENDPOINT = os.environ.get('R2_ENDPOINT_URL', '')
 R2_BUCKET = os.environ.get('R2_BUCKET_NAME', 'offon')
 
+R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL', '')
+
 def generate_email_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
 
@@ -47,12 +49,9 @@ def upload_image_to_r2(file_obj, filename, content_type):
         )
         key = f'posts/{datetime.utcnow().strftime("%Y%m%d%H%M%S")}_{filename}'
         s3.upload_fileobj(file_obj, R2_BUCKET, key, ExtraArgs={
-            'ContentType': content_type,
-            'ACL': 'public-read'
+            'ContentType': content_type
         })
-        # public URL
-        account_id = R2_ENDPOINT.split('//')[1].split('.')[0]
-        public_url = f'https://pub-{account_id}.r2.dev/{key}'
+        public_url = f'{R2_PUBLIC_URL}/{key}'
         return public_url
     except Exception as e:
         print("R2 upload error:", e)
