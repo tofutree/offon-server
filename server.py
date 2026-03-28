@@ -319,12 +319,31 @@ def receive_email():
         return 'server error', 500
 
     import re as _re
+    
+    # 디버그 로그
+    print("=== EMAIL RECEIVED ===")
+    print("Form keys:", list(request.form.keys()))
+    print("Files keys:", list(request.files.keys()))
+    print("to:", request.form.get('to', ''))
+    print("from:", request.form.get('from', ''))
+    print("subject:", request.form.get('subject', ''))
+    print("text:", request.form.get('text', '')[:200])
+    print("html:", request.form.get('html', '')[:200])
+    print("attachments:", request.form.get('attachments', '0'))
+    print("attachment-info:", request.form.get('attachment-info', ''))
+    print("======================")
+
     to_email = request.form.get('to', '')
     subject = request.form.get('subject', '').strip()
     body = request.form.get('text', '').strip()
+    if not body:
+        body = request.form.get('html', '').strip()
+        # HTML 태그 제거
+        body = _re.sub(r'<[^>]+>', '', body).strip()
 
     match = _re.search(r'([\w]+)\.([\w]+)@mail\.offon\.app', to_email)
     if not match:
+        print("No match for email address:", to_email)
         return 'ok', 200
 
     handle = match.group(1)
@@ -332,6 +351,7 @@ def receive_email():
 
     user_query = db.collection('users').where('handle', '==', handle).where('email_code', '==', code).limit(1).get()
     if not user_query:
+        print("No user found for handle:", handle, "code:", code)
         return 'ok', 200
 
     user_doc = user_query[0]
@@ -345,14 +365,30 @@ def receive_email():
         try:
             import json as _json
             info = _json.loads(request.form.get('attachment-info', '{}'))
+            print("attachment-info parsed:", info)
             first_key = list(info.keys())[0]
             media_type = info[first_key].get('type', '')
             if not media_type.startswith('image/'):
                 media_type = None
-        except:
-            pass
+                media_url = None
+            else:
+                # SendGrid가 파일을 multipart로 보냄
+                attachment_file = request.files.get(first_key)
+                if attachment_file:
+                    print("Got attachment file:", attachment_file.filename, media_type)
+                    # TODO: Firebase Storage에 업로드
+                    # 지금은 None으로 저장
+                    media_url = None
+        except Exception as e:
+            print("Attachment error:", e)
 
-    text = subject if subject else body
+    # subject + body 합치기
+    text_parts = []
+    if subject:
+        text_parts.append(subject)
+    if body and body != subject:
+        text_parts.append(body)
+    text = '\n'.join(text_parts).strip()
 
     post = {
         'user_id': user_doc.id,
@@ -374,6 +410,7 @@ def receive_email():
         'last_posted': datetime.utcnow()
     })
 
+    print("Post created successfully for:", handle)
     return 'ok', 200
 
 
