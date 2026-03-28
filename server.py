@@ -255,7 +255,35 @@ def is_following():
     return jsonify({'is_following': len(existing) > 0})
 
 
-@app.route('/api/followers/<handle>', methods=['GET'])
+@app.route('/api/post/<post_id>', methods=['DELETE'])
+def delete_post(post_id):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    handle = request.args.get('handle')
+    if not handle:
+        return jsonify({'error': 'handle required'}), 400
+
+    post_ref = db.collection('posts').document(post_id)
+    post = post_ref.get()
+
+    if not post.exists:
+        return jsonify({'error': 'post not found'}), 404
+
+    if post.to_dict().get('handle') != handle:
+        return jsonify({'error': 'unauthorized'}), 403
+
+    post_ref.delete()
+
+    # post_count 감소
+    users = db.collection('users').where('handle', '==', handle).limit(1).get()
+    if users:
+        users[0].reference.update({'post_count': firestore.Increment(-1)})
+
+    return jsonify({'success': True})
+
+
+
 def get_followers(handle):
     if not db:
         return jsonify({'error': 'db not ready'}), 500
