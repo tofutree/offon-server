@@ -5,6 +5,8 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 import os
 import json
+import random
+import string
 from datetime import datetime
 
 app = Flask(__name__)
@@ -21,6 +23,11 @@ else:
     print("WARNING: FIREBASE_KEY not set")
 
 OFFON_NUMBER = os.environ.get('OFFON_NUMBER', '+18448860777')
+EMAIL_DOMAIN = 'mail.offon.app'
+
+def generate_email_code():
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+
 
 @app.route('/', methods=['GET'])
 def index():
@@ -154,14 +161,17 @@ def register():
         'follower_count': 0,
         'following_count': 0,
         'profile_photo': None,
+        'email_code': generate_email_code(),
         'created_at': datetime.utcnow()
     }
 
     doc_ref = db.collection('users').add(user)
+    email_address = f"{handle}.{user['email_code']}@{EMAIL_DOMAIN}"
     return jsonify({
         'success': True,
         'user_id': doc_ref[1].id,
-        'message': f'Welcome to off/on, {username}! Text {OFFON_NUMBER} to post.'
+        'email_address': email_address,
+        'message': f'Welcome to off/on, {username}! Text {OFFON_NUMBER} or email {email_address} to post.'
     })
 
 
@@ -301,6 +311,97 @@ def get_following(handle):
     follows = db.collection('follows').where('from_handle', '==', handle).get()
     handles = [f.to_dict()['to_handle'] for f in follows]
     return jsonify({'following': handles})
+
+
+@app.route('/email', methods=['POST'])
+def receive_email():
+    if not db:
+        return 'server error', 500
+
+    import re as _re
+    to_email = request.form.get('to', '')
+    subject = request.form.get('subject', '').strip()
+    body = request.form.get('text', '').strip()
+
+    match = _re.search(r'([\w]+)\.([\w]+)@mail\.offon\.app', to_email)
+    if not match:
+        return 'ok', 200
+
+    handle = match.group(1)
+    code = match.group(2)
+
+    user_query = db.collection('users').where('handle', '==', handle).where('email_code', '==', code).limit(1).get()
+    if not user_query:
+        return 'ok', 200
+
+    user_doc = user_query[0]
+    user_data = user_doc.to_dict()
+
+    # 첨부 이미지 최대 1개
+    media_url = None
+    media_type = None
+    attachment_count = int(request.form.get('attachments', 0))
+    if attachment_count > 0:
+        try:
+            import json as _json
+            info = _json.loads(request.form.get('attachment-info', '{}'))
+            first_key = list(info.keys())[0]
+            media_type = info[first_key].get('type', '')
+            if not media_type.startswith('image/'):
+                media_type = None
+        except:
+            pass
+
+    text = subject if subject else body
+
+    post = {
+        'user_id': user_doc.id,
+        'username': user_data.get('username', 'anonymous'),
+        'handle': user_data.get('handle', 'unknown'),
+        'is_public': user_data.get('is_public', True),
+        'text': text,
+        'media_url': media_url,
+        'media_type': media_type,
+        'device': user_data.get('device', 'email'),
+        'created_at': datetime.utcnow(),
+        'likes': 0,
+        'source': 'email'
+    }
+
+    db.collection('posts').add(post)
+    user_doc.reference.update({
+        'post_count': firestore.Increment(1),
+        'last_posted': datetime.utcnow()
+    })
+
+    return 'ok', 200
+
+
+@app.route('/api/generate_email_code', methods=['POST'])
+def generate_user_email_code():
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    data = request.json
+    handle = data.get('handle')
+    if not handle:
+        return jsonify({'error': 'handle required'}), 400
+
+    users = db.collection('users').where('handle', '==', handle).limit(1).get()
+    if not users:
+        return jsonify({'error': 'user not found'}), 404
+
+    user_doc = users[0]
+    user_data = user_doc.to_dict()
+
+    if user_data.get('email_code'):
+        email_address = f"{handle}.{user_data['email_code']}@{EMAIL_DOMAIN}"
+        return jsonify({'email_address': email_address})
+
+    code = generate_email_code()
+    user_doc.reference.update({'email_code': code})
+    email_address = f"{handle}.{code}@{EMAIL_DOMAIN}"
+    return jsonify({'email_address': email_address})
 
 
 if __name__ == '__main__':
