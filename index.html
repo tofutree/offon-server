@@ -631,14 +631,22 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         <div class="profile-mms" style="margin-top:8px;">
           <div class="mms-label">your post-by-email address</div>
           <div class="mms-number" id="user-email-address" style="font-size:11px; word-break:break-all;">—</div>
-          <div class="mms-hint">send an email here to post · attach 1 photo</div>
+          <div class="mms-hint">
+            send an email to this address to post<br>
+            · write your post in the <strong>body</strong> (subject is ignored)<br>
+            · attach up to 1 photo<br>
+            · text without a photo is fine too
+          </div>
         </div>
       </div>
       <div class="sidebar-nav">
         <button class="sn-item active" onclick="loadFeed('mine', this)">my posts</button>
         <button class="sn-item" onclick="loadFeed('following', this)">following</button>
         <button class="sn-item" onclick="loadFeed('public', this)">discover</button>
-        <a href="/cdn-cgi/l/email-protection#a8c0cdc4c4c7e8c7cecec7c686c9d8d8" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); padding:9px 12px; text-decoration:none; display:block; margin-top:8px;"><span class="__cf_email__" data-cfemail="1d75787171725d727b7b7273337c6d6d">[email&#160;protected]</span></a>
+        <div style="margin-top:16px; padding: 0 12px;">
+          <div style="font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--border); margin-bottom:6px;">questions or feedback?</div>
+          <a href="mailto:hello@offon.app" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); text-decoration:none; display:block;">hello@offon.app</a>
+        </div>
       </div>
     </aside>
     <main>
@@ -941,6 +949,28 @@ async function loadDiscover() {
   }
 }
 
+async function toggleLike(postId, btn) {
+  if (!currentUser) return;
+  btn.disabled = true;
+  try {
+    const res = await fetch(API + '/api/post/' + postId + '/like', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle: currentUser.handle })
+    });
+    const data = await res.json();
+    const current = parseInt(btn.textContent.replace(/\D/g, '')) || 0;
+    if (data.liked) {
+      btn.textContent = '♥ ' + (current + 1);
+      btn.style.color = 'var(--rust)';
+    } else {
+      btn.textContent = '♡ ' + Math.max(0, current - 1);
+      btn.style.color = 'var(--faded)';
+    }
+  } catch(e) {}
+  btn.disabled = false;
+}
+
 async function toggleFollow(handle, btn) {
   if (!currentUser) return;
   const isFollowing = btn.dataset.following === 'true';
@@ -1001,7 +1031,7 @@ async function renderPost(post) {
       </div>
       ${post.text ? `<div class="post-text">${post.text}</div>` : ''}
       <div class="post-footer">
-        <button class="post-action">♡ ${post.likes || 0}</button>
+        <button class="post-action" id="like-${post.id}" onclick="toggleLike('${post.id}', this)">♡ ${post.likes || 0}</button>
         ${followBtn}
         ${isOwnPost ? `<button class="post-action" style="margin-left:auto; color:var(--faded);" onclick="deletePost('${post.id}', this)">✕ delete</button>` : ''}
       </div>
