@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from twilio.twiml.messaging_response import MessagingResponse
 import firebase_admin
-from firebase_admin import credentials, firestore
+from firebase_admin import credentials, firestore, storage
 import os
 import json
 import random
@@ -13,10 +13,15 @@ app = Flask(__name__)
 CORS(app)
 
 firebase_key = os.environ.get('FIREBASE_KEY')
+STORAGE_BUCKET = os.environ.get('STORAGE_BUCKET', '')
+
 if firebase_key:
     key_dict = json.loads(firebase_key)
     cred = credentials.Certificate(key_dict)
-    firebase_admin.initialize_app(cred)
+    if STORAGE_BUCKET:
+        firebase_admin.initialize_app(cred, {'storageBucket': STORAGE_BUCKET})
+    else:
+        firebase_admin.initialize_app(cred)
     db = firestore.client()
 else:
     db = None
@@ -27,6 +32,17 @@ EMAIL_DOMAIN = 'mail.offon.app'
 
 def generate_email_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+
+def upload_image_to_storage(file_obj, filename, content_type):
+    try:
+        bucket = storage.bucket()
+        blob = bucket.blob(f'posts/{datetime.utcnow().strftime("%Y%m%d%H%M%S")}_{filename}')
+        blob.upload_from_file(file_obj, content_type=content_type)
+        blob.make_public()
+        return blob.public_url
+    except Exception as e:
+        print("Storage upload error:", e)
+        return None
 
 
 @app.route('/', methods=['GET'])
@@ -323,17 +339,14 @@ def receive_email():
     # 디버그 로그
     print("=== EMAIL RECEIVED ===")
     print("Form keys:", list(request.form.keys()))
-    print("Files keys:", list(request.files.keys()))
     print("to:", request.form.get('to', ''))
-    print("from:", request.form.get('from', ''))
     print("subject:", request.form.get('subject', ''))
     print("text:", request.form.get('text', '')[:200])
-    print("html:", request.form.get('html', '')[:200])
     print("attachments:", request.form.get('attachments', '0'))
     print("attachment-info:", request.form.get('attachment-info', ''))
     print("======================")
 
-    to_email = request.form.get('to', '')
+    to_email = request.form.get('to', '') + ' ' + request.form.get('envelope', '')
     subject = request.form.get('subject', '').strip()
     body = request.form.get('text', '').strip()
     if not body:
@@ -368,27 +381,20 @@ def receive_email():
             print("attachment-info parsed:", info)
             first_key = list(info.keys())[0]
             media_type = info[first_key].get('type', '')
-            if not media_type.startswith('image/'):
-                media_type = None
-                media_url = None
-            else:
-                # SendGrid가 파일을 multipart로 보냄
+            filename = info[first_key].get('filename', 'image.jpg')
+            if media_type.startswith('image/') and STORAGE_BUCKET:
                 attachment_file = request.files.get(first_key)
                 if attachment_file:
-                    print("Got attachment file:", attachment_file.filename, media_type)
-                    # TODO: Firebase Storage에 업로드
-                    # 지금은 None으로 저장
-                    media_url = None
+                    print("Uploading image:", filename, media_type)
+                    media_url = upload_image_to_storage(attachment_file, filename, media_type)
+                    print("Uploaded URL:", media_url)
+            else:
+                media_type = None
         except Exception as e:
             print("Attachment error:", e)
 
-    # subject + body 합치기
-    text_parts = []
-    if subject:
-        text_parts.append(subject)
-    if body and body != subject:
-        text_parts.append(body)
-    text = '\n'.join(text_parts).strip()
+    # body만 사용, subject 제외
+    text = body.strip() if body else ''
 
     post = {
         'user_id': user_doc.id,
