@@ -2,26 +2,23 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from twilio.twiml.messaging_response import MessagingResponse
 import firebase_admin
-from firebase_admin import credentials, firestore, storage
+from firebase_admin import credentials, firestore
 import os
 import json
 import random
 import string
+import boto3
+from botocore.client import Config
 from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
 
 firebase_key = os.environ.get('FIREBASE_KEY')
-STORAGE_BUCKET = os.environ.get('STORAGE_BUCKET', '')
-
 if firebase_key:
     key_dict = json.loads(firebase_key)
     cred = credentials.Certificate(key_dict)
-    if STORAGE_BUCKET:
-        firebase_admin.initialize_app(cred, {'storageBucket': STORAGE_BUCKET})
-    else:
-        firebase_admin.initialize_app(cred)
+    firebase_admin.initialize_app(cred)
     db = firestore.client()
 else:
     db = None
@@ -30,18 +27,35 @@ else:
 OFFON_NUMBER = os.environ.get('OFFON_NUMBER', '+18448860777')
 EMAIL_DOMAIN = 'mail.offon.app'
 
+R2_ACCESS_KEY = os.environ.get('R2_ACCESS_KEY_ID', '')
+R2_SECRET_KEY = os.environ.get('R2_SECRET_ACCESS_KEY', '')
+R2_ENDPOINT = os.environ.get('R2_ENDPOINT_URL', '')
+R2_BUCKET = os.environ.get('R2_BUCKET_NAME', 'offon')
+
 def generate_email_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
 
-def upload_image_to_storage(file_obj, filename, content_type):
+def upload_image_to_r2(file_obj, filename, content_type):
     try:
-        bucket = storage.bucket()
-        blob = bucket.blob(f'posts/{datetime.utcnow().strftime("%Y%m%d%H%M%S")}_{filename}')
-        blob.upload_from_file(file_obj, content_type=content_type)
-        blob.make_public()
-        return blob.public_url
+        s3 = boto3.client(
+            's3',
+            endpoint_url=R2_ENDPOINT,
+            aws_access_key_id=R2_ACCESS_KEY,
+            aws_secret_access_key=R2_SECRET_KEY,
+            config=Config(signature_version='s3v4'),
+            region_name='auto'
+        )
+        key = f'posts/{datetime.utcnow().strftime("%Y%m%d%H%M%S")}_{filename}'
+        s3.upload_fileobj(file_obj, R2_BUCKET, key, ExtraArgs={
+            'ContentType': content_type,
+            'ACL': 'public-read'
+        })
+        # public URL
+        account_id = R2_ENDPOINT.split('//')[1].split('.')[0]
+        public_url = f'https://pub-{account_id}.r2.dev/{key}'
+        return public_url
     except Exception as e:
-        print("Storage upload error:", e)
+        print("R2 upload error:", e)
         return None
 
 
@@ -382,11 +396,11 @@ def receive_email():
             first_key = list(info.keys())[0]
             media_type = info[first_key].get('type', '')
             filename = info[first_key].get('filename', 'image.jpg')
-            if media_type.startswith('image/') and STORAGE_BUCKET:
+            if media_type.startswith('image/') and R2_ACCESS_KEY:
                 attachment_file = request.files.get(first_key)
                 if attachment_file:
                     print("Uploading image:", filename, media_type)
-                    media_url = upload_image_to_storage(attachment_file, filename, media_type)
+                    media_url = upload_image_to_r2(attachment_file, filename, media_type)
                     print("Uploaded URL:", media_url)
             else:
                 media_type = None
