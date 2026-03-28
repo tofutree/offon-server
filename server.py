@@ -433,7 +433,30 @@ def receive_email():
     return 'ok', 200
 
 
-@app.route('/api/generate_email_code', methods=['POST'])
+@app.route('/api/post/<post_id>/like', methods=['POST'])
+def like_post(post_id):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    handle = request.json.get('handle') if request.json else None
+    if not handle:
+        return jsonify({'error': 'handle required'}), 400
+
+    # 이미 좋아요 눌렀는지 확인
+    existing = db.collection('likes').where('post_id', '==', post_id).where('handle', '==', handle).limit(1).get()
+    if existing:
+        # 좋아요 취소
+        existing[0].reference.delete()
+        db.collection('posts').document(post_id).update({'likes': firestore.Increment(-1)})
+        return jsonify({'liked': False})
+
+    # 좋아요 추가
+    db.collection('likes').add({'post_id': post_id, 'handle': handle, 'created_at': datetime.utcnow()})
+    db.collection('posts').document(post_id).update({'likes': firestore.Increment(1)})
+    return jsonify({'liked': True})
+
+
+
 def generate_user_email_code():
     if not db:
         return jsonify({'error': 'db not ready'}), 500
