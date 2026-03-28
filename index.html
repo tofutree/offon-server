@@ -403,9 +403,10 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
 
 .post-photo {
   width: 100%;
-  aspect-ratio: 16/7;
-  object-fit: cover;
+  max-height: 500px;
+  object-fit: contain;
   display: block;
+  background: var(--warm);
 }
 
 .post-photo-placeholder {
