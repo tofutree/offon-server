@@ -585,13 +585,15 @@ def get_notifications(handle):
     if not db:
         return jsonify({'error': 'db not ready'}), 500
 
-    notifs = db.collection('notifications').where('to_handle', '==', handle).order_by('created_at', direction=firestore.Query.DESCENDING).limit(30).get()
+    notifs_raw = db.collection('notifications').where('to_handle', '==', handle).limit(30).get()
     result = []
-    for n in notifs:
+    for n in notifs_raw:
         d = n.to_dict()
         d['id'] = n.id
         d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
         result.append(d)
+    # 클라이언트에서 정렬
+    result.sort(key=lambda x: x.get('created_at', ''), reverse=True)
 
     return jsonify({'notifications': result})
 
