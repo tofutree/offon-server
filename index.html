@@ -487,10 +487,10 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
   <div class="hero">
     <div>
       <h1>a signal<br>from <em>offline.</em></h1>
-      <p>You want to disconnect, but not disappear.<br>Send a text from wherever you are — we'll keep it here while you're gone.</p>
+      <p>You want to disconnect, but not disappear.<br>Send a text — or an email, if texting isn't available — from wherever you are. We'll keep it here while you're gone.</p>
       <div class="hero-cta">
-        <button class="btn-primary" onclick="showPage('signup')">get started</button>
-        <span class="hero-sub">free · 2 min</span>
+        <button class="btn-primary" onclick="showPage('signup')">send your first signal</button>
+        <span class="hero-sub">free · no app needed</span>
       </div>
     </div>
     <div>
@@ -504,15 +504,15 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         </div>
         <div class="film-holes-b"><div class="fh"></div><div class="fh"></div><div class="fh"></div><div class="fh"></div><div class="fh"></div><div class="fh"></div></div>
       </div>
-      <div class="film-id">off/on — 2025</div>
+      <div class="film-id">off/on — 2026</div>
     </div>
   </div>
 
   <div class="section">
     <div class="sec-label">how it works</div>
     <div class="steps">
-      <div class="step"><div class="step-n">01</div><h3>Make an account</h3><p>Sign up at offon.app. Choose public or private. We'll give you our toll-free number to text.</p></div>
-      <div class="step"><div class="step-n">02</div><h3>Send an MMS or email to post</h3><p>Text our toll-free number (+1 844 886 0777) from any mobile phone, or send an email to your unique off/on address. Write your post in the <strong>body</strong> of the email — the subject line is ignored. Attach 1 photo. Your post appears instantly on your feed.</p></div>
+      <div class="step"><div class="step-n">01</div><h3>Make an account</h3><p>Sign up at offon.app. Choose public or private. You'll get a toll-free number to text and a unique email address — no app needed, ever.</p></div>
+      <div class="step"><div class="step-n">02</div><h3>Text or email to post</h3><p>Send an MMS to +1 844 886 0777 from any phone — flip phone, old Android, whatever. Or, if texting isn't available, email your unique off/on address instead. Write in the body, attach 1 photo.</p></div>
       <div class="step"><div class="step-n">03</div><h3>It stays here</h3><p>Friends can check your feed anytime. You can look back when you're online again. No app needed — ever.</p></div>
     </div>
   </div>
@@ -525,14 +525,14 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
   <footer>
     <span class="footer-logo">off/on</span>
     <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-      <span class="footer-note">MMS from offline · 2025</span>
+      <span class="footer-note">text or email from offline · 2026</span>
       <span class="footer-note">Users post by sending MMS to +1 844 886 0777 · one confirmation message is sent per post</span>
       <div style="display:flex; gap:16px; margin-top:4px;">
         <span onclick="showPage('privacy')" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Privacy Policy</span>
         <span onclick="showPage('terms')" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Terms of Service</span>
       </div>
     </div>
-    <a href="/cdn-cgi/l/email-protection#bfd7dad3d3d0ffd0d9d9d0d191decfcf" style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); text-decoration:none; letter-spacing:0.04em;"><span class="__cf_email__" data-cfemail="c7afa2ababa887a8a1a1a8a9e9a6b7b7">[email&#160;protected]</span></a>
+    <a href="/cdn-cgi/l/email-protection#c3aba6afafac83aca5a5acadeda2b3b3" style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); text-decoration:none; letter-spacing:0.04em;"><span class="__cf_email__" data-cfemail="b6ded3dadad9f6d9d0d0d9d898d7c6c6">[email&#160;protected]</span></a>
   </footer>
 </div>
 
@@ -557,8 +557,11 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
       </div>
       <div class="form-group">
         <label class="form-label">phone number</label>
-        <input type="tel" class="form-input" id="signup-phone" placeholder="+1 415 123 4567">
+        <input type="tel" class="form-input" id="signup-phone" placeholder="+1 415 123 4567" oninput="checkPhoneCountry(this.value)">
         <div class="form-hint">international format, no spaces · e.g. US: +14151234567 · KR: +821012345678 · UK: +447911123456<br>this is how we link your texts to your account</div>
+        <div id="mms-warning" style="display:none; margin-top:8px; background:#fef9e7; border:1px solid #f0d070; padding:10px 12px; font-family:'Courier Prime',monospace; font-size:11px; color:#7a6000; line-height:1.6;">
+          📧 MMS is not supported for your country. You can still post by sending a <strong>text-only SMS</strong> to +1 844 886 0777, or by <strong>emailing</strong> your unique off/on address after signing up.
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">your device</label>
@@ -626,7 +629,7 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         <div class="profile-mms">
           <div class="mms-label">your off/on number</div>
           <div class="mms-number">+1 844 886 0777</div>
-          <div class="mms-hint">text this number to post · add #profile to set profile photo</div>
+          <div class="mms-hint" id="mms-hint-text">text this number to post · add #profile to set profile photo</div>
         </div>
         <div class="profile-mms" style="margin-top:8px;">
           <div class="mms-label">your post-by-email address</div>
@@ -641,8 +644,20 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
       </div>
       <div class="sidebar-nav">
         <button class="sn-item active" onclick="loadFeed('mine', this)">my posts</button>
-        <button class="sn-item" onclick="loadFeed('following', this)">following</button>
+        <button class="sn-item" onclick="loadFeed('liked', this)">♡ liked posts</button>
+        <button class="sn-item" onclick="loadNotifications(this)">🔔 notifications <span id="notif-badge" style="background:var(--rust); color:white; border-radius:10px; padding:1px 6px; font-size:10px; display:none;"></span></button>
+        <button class="sn-item" onclick="showFollowList('followers')">followers</button>
+        <button class="sn-item" onclick="showFollowList('following')">following</button>
+        <button class="sn-item" onclick="loadFeed('following', this)">following feed</button>
         <button class="sn-item" onclick="loadFeed('public', this)">discover</button>
+        <div style="margin-top:16px; padding:0 12px;">
+          <div style="font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--border); margin-bottom:8px;">find a user</div>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="search-handle" placeholder="@handle" style="flex:1; font-family:'Courier Prime',monospace; font-size:12px; background:var(--cream); border:1px solid var(--border); padding:7px 10px; color:var(--ink); outline:none;" onkeydown="if(event.key==='Enter') searchUser()">
+            <button onclick="searchUser()" style="font-family:'Courier Prime',monospace; font-size:11px; background:var(--ink); color:var(--cream); border:none; padding:7px 12px; cursor:pointer;">go</button>
+          </div>
+          <div id="search-result" style="margin-top:8px; font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded);"></div>
+        </div>
         <div style="margin-top:16px; padding: 0 12px;">
           <div style="font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--border); margin-bottom:6px;">questions or feedback?</div>
           <a href="mailto:hello@offon.app" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); text-decoration:none; display:block;">hello@offon.app</a>
@@ -669,6 +684,13 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         <span class="feed-title">discover</span>
         <span class="feed-count" id="discover-count"></span>
       </div>
+      <div id="discover-cta" style="display:none; background:var(--paper); border:1px solid var(--border); padding:24px 28px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+        <div>
+          <div style="font-size:15px; font-weight:700; margin-bottom:4px;">send your first signal</div>
+          <div style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded);">text or email from any phone · no app needed</div>
+        </div>
+        <button class="btn-solid" onclick="showPage('signup')" style="padding:10px 22px;">join off/on</button>
+      </div>
       <div id="discover-container">
         <div class="loading">loading...</div>
       </div>
@@ -676,7 +698,7 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const API = 'https://web-production-05e09.up.railway.app';
 let currentUser = JSON.parse(localStorage.getItem('offon_user') || 'null');
 
@@ -839,21 +861,11 @@ async function loadProfileCounts() {
     const data = await res.json();
     document.getElementById('follower-count').textContent = data.follower_count || 0;
     document.getElementById('following-count').textContent = data.following_count || 0;
-    if (data.profile_photo && data.profile_photo !== currentUser.profile_photo) {
-      currentUser.profile_photo = data.profile_photo;
-      localStorage.setItem('offon_user', JSON.stringify(currentUser));
-      const avatar = document.getElementById('profile-avatar');
-      avatar.style.backgroundImage = `url(${data.profile_photo})`;
-      avatar.style.backgroundSize = 'cover';
-      avatar.style.backgroundPosition = 'center';
-      avatar.textContent = '';
-    }
 
     // 이메일 주소 표시
     if (data.email_code) {
       document.getElementById('user-email-address').textContent = `${data.handle}.${data.email_code}@mail.offon.app`;
     } else {
-      // 이메일 코드 없으면 생성
       const emailRes = await fetch(API + '/api/generate_email_code', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -863,6 +875,16 @@ async function loadProfileCounts() {
       if (emailData.email_address) {
         document.getElementById('user-email-address').textContent = emailData.email_address;
       }
+    }
+
+    if (data.profile_photo && data.profile_photo !== currentUser.profile_photo) {
+      currentUser.profile_photo = data.profile_photo;
+      localStorage.setItem('offon_user', JSON.stringify(currentUser));
+      const avatar = document.getElementById('profile-avatar');
+      avatar.style.backgroundImage = `url(${data.profile_photo})`;
+      avatar.style.backgroundSize = 'cover';
+      avatar.style.backgroundPosition = 'center';
+      avatar.textContent = '';
     }
   } catch(e) {}
 }
@@ -884,6 +906,11 @@ async function loadFeed(type, btn) {
       const data = await res.json();
       posts = data.posts || [];
       title.textContent = 'my posts';
+    } else if (type === 'liked' && currentUser) {
+      title.textContent = '♡ liked posts';
+      const res = await fetch(API + '/api/liked_posts/' + currentUser.handle);
+      const data = await res.json();
+      posts = data.posts || [];
     } else if (type === 'following' && currentUser) {
       title.textContent = 'following';
       const fRes = await fetch(API + '/api/following/' + currentUser.handle);
@@ -928,6 +955,10 @@ async function loadDiscover() {
   const container = document.getElementById('discover-container');
   container.innerHTML = '<div class="loading">loading...</div>';
 
+  // 비로그인 유저한테 CTA 보여주기
+  const cta = document.getElementById('discover-cta');
+  if (cta) cta.style.display = currentUser ? 'none' : 'flex';
+
   try {
     const res = await fetch(API + '/api/posts?limit=20');
     const data = await res.json();
@@ -947,6 +978,249 @@ async function loadDiscover() {
   } catch (e) {
     container.innerHTML = '<div class="empty-feed">could not load. try again.</div>';
   }
+}
+
+async function loadNotifications(btn) {
+  if (!currentUser) return;
+  document.querySelectorAll('.sn-item').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const container = document.getElementById('feed-container');
+  const title = document.getElementById('feed-title');
+  title.textContent = '🔔 notifications';
+  container.innerHTML = '<div class="loading">loading...</div>';
+
+  try {
+    const res = await fetch(API + '/api/notifications/' + currentUser.handle);
+    const data = await res.json();
+    const notifs = data.notifications || [];
+
+    document.getElementById('feed-count').textContent = notifs.length + ' total';
+    container.innerHTML = '';
+
+    // 읽음 처리
+    fetch(API + '/api/notifications/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle: currentUser.handle })
+    });
+    const badge = document.getElementById('notif-badge');
+    if (badge) badge.style.display = 'none';
+
+    if (notifs.length === 0) {
+      container.innerHTML = '<div class="empty-feed">no notifications yet.</div>';
+      return;
+    }
+
+    notifs.forEach(n => {
+      const div = document.createElement('div');
+      div.style.cssText = 'padding:16px 20px; border:1px solid var(--border); margin-bottom:12px; background:' + (n.read ? 'var(--paper)' : 'var(--warm)') + '; display:flex; align-items:center; gap:12px;';
+      const time = n.created_at ? new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      if (n.type === 'like') {
+        div.innerHTML = `
+          <span style="font-size:18px;">♥</span>
+          <div style="flex:1;">
+            <div style="font-family:'Courier Prime',monospace; font-size:13px; color:var(--ink);">
+              <strong style="cursor:pointer; text-decoration:underline; text-underline-offset:3px;" onclick="viewProfile('${n.from_handle}')">@${n.from_handle}</strong> liked your post
+            </div>
+            ${n.post_text ? `<div style="font-size:12px; color:var(--faded); margin-top:3px;">"${n.post_text}..."</div>` : ''}
+          </div>
+          <span style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--border);">${time}</span>
+        `;
+      } else if (n.type === 'follow') {
+        div.innerHTML = `
+          <span style="font-size:18px;">👤</span>
+          <div style="flex:1;">
+            <div style="font-family:'Courier Prime',monospace; font-size:13px; color:var(--ink);">
+              <strong style="cursor:pointer; text-decoration:underline; text-underline-offset:3px;" onclick="viewProfile('${n.from_handle}')">@${n.from_handle}</strong> followed you
+            </div>
+          </div>
+          <span style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--border);">${time}</span>
+        `;
+      }
+      container.appendChild(div);
+    });
+  } catch(e) {
+    container.innerHTML = '<div class="empty-feed">could not load notifications.</div>';
+  }
+}
+
+async function checkNotifBadge() {
+  if (!currentUser) return;
+  try {
+    const res = await fetch(API + '/api/notifications/' + currentUser.handle);
+    const data = await res.json();
+    const unread = (data.notifications || []).filter(n => !n.read).length;
+    const badge = document.getElementById('notif-badge');
+    if (badge && unread > 0) {
+      badge.textContent = unread;
+      badge.style.display = 'inline';
+    }
+  } catch(e) {}
+}
+
+async function searchUser() {
+  const input = document.getElementById('search-handle');
+  const result = document.getElementById('search-result');
+  const handle = input.value.trim().replace('@', '');
+  if (!handle) return;
+
+  result.textContent = 'searching...';
+  try {
+    const res = await fetch(API + '/api/user/' + handle);
+    if (res.ok) {
+      const data = await res.json();
+      result.innerHTML = `<span style="color:var(--ink); cursor:pointer; text-decoration:underline; text-underline-offset:3px;" onclick="viewProfile('${data.handle}')">@${data.handle}</span> found ✓`;
+      input.value = '';
+      setTimeout(() => viewProfile(data.handle), 300);
+    } else {
+      result.textContent = 'user not found.';
+    }
+  } catch(e) {
+    result.textContent = 'connection error.';
+  }
+}
+
+function checkPhoneCountry(val) {
+  // MMS 미지원 국가 코드 (미국+1, 캐나다+1, 호주+61 제외)
+  const unsupported = ['+82', '+81', '+44', '+49', '+33', '+39', '+34', '+55', '+86', '+91'];
+  const warning = document.getElementById('mms-warning');
+  if (!warning) return;
+  const isUnsupported = unsupported.some(c => val.startsWith(c));
+  warning.style.display = isUnsupported ? 'block' : 'none';
+}
+
+async function showFollowList(type) {
+  if (!currentUser) return;
+  const container = document.getElementById('feed-container');
+  const title = document.getElementById('feed-title');
+  title.textContent = type === 'followers' ? 'followers' : 'following';
+  container.innerHTML = '<div class="loading">loading...</div>';
+
+  document.querySelectorAll('.sn-item').forEach(b => b.classList.remove('active'));
+
+  try {
+    const res = await fetch(API + '/api/' + type + '/' + currentUser.handle);
+    const data = await res.json();
+    const handles = data[type] || [];
+
+    document.getElementById('feed-count').textContent = handles.length + ' people';
+    container.innerHTML = '';
+
+    if (handles.length === 0) {
+      container.innerHTML = `<div class="empty-feed">no ${type} yet.</div>`;
+      return;
+    }
+
+    handles.forEach(h => {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border:1px solid var(--border); margin-bottom:12px; background:var(--paper); cursor:pointer;';
+      div.innerHTML = `
+        <div style="font-family:'Courier Prime',monospace; font-size:14px; color:var(--ink);">@${h}</div>
+        <button onclick="viewProfile('${h}')" style="font-family:'Courier Prime',monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; border:1px solid var(--border); background:none; color:var(--faded); padding:6px 14px; cursor:pointer;">view</button>
+      `;
+      div.onclick = (e) => { if (e.target.tagName !== 'BUTTON') viewProfile(h); };
+      container.appendChild(div);
+    });
+  } catch(e) {
+    container.innerHTML = '<div class="empty-feed">could not load.</div>';
+  }
+}
+
+
+  // 본인이면 내 피드로
+  if (currentUser && currentUser.handle === handle) {
+    showPage('feed');
+    return;
+  }
+
+  // 프로필 페이지 동적 생성
+  let page = document.getElementById('page-profile');
+  if (!page) {
+    page = document.createElement('div');
+    page.id = 'page-profile';
+    page.className = 'page';
+    document.body.appendChild(page);
+  }
+
+  showPage('profile');
+  page.innerHTML = '<div style="max-width:680px; margin:60px auto; padding:0 48px;"><div class="loading">loading...</div></div>';
+
+  try {
+    const [userRes, postsRes] = await Promise.all([
+      fetch(API + '/api/user/' + handle),
+      fetch(API + '/api/posts?limit=20&handle=' + handle + (currentUser ? '&requester=' + currentUser.handle : ''))
+    ]);
+    const user = await userRes.json();
+    const postsData = await postsRes.json();
+    const posts = postsData.posts || [];
+
+    let isFollowing = false;
+    if (currentUser) {
+      const fRes = await fetch(API + '/api/is_following?from_handle=' + currentUser.handle + '&to_handle=' + handle);
+      const fData = await fRes.json();
+      isFollowing = fData.is_following;
+    }
+
+    const followBtnHtml = currentUser ? `
+      <button onclick="toggleFollowProfile('${handle}', this)" data-following="${isFollowing}"
+        style="font-family:'Courier Prime',monospace; font-size:12px; letter-spacing:0.06em; text-transform:uppercase;
+        background:${isFollowing ? 'none' : 'var(--ink)'}; color:${isFollowing ? 'var(--faded)' : 'var(--cream)'};
+        border:1px solid ${isFollowing ? 'var(--border)' : 'var(--ink)'}; padding:8px 18px; cursor:pointer;">
+        ${isFollowing ? '✓ following' : '+ follow'}
+      </button>` : '';
+
+    page.innerHTML = `
+      <div style="max-width:680px; margin:60px auto; padding:0 48px 80px;">
+        <div style="font-family:'Courier Prime',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--faded); margin-bottom:32px; cursor:pointer;" onclick="history.back(); showPage('discover')">← back</div>
+        <div style="display:flex; align-items:center; gap:20px; margin-bottom:32px;">
+          <div style="width:56px; height:56px; border-radius:50%; background:var(--warm); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:'Courier Prime',monospace; font-size:22px; color:var(--faded); ${user.profile_photo ? 'background-image:url(' + user.profile_photo + '); background-size:cover; background-position:center;' : ''}">
+            ${user.profile_photo ? '' : (user.username || 'A')[0].toUpperCase()}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:18px; font-weight:700; margin-bottom:2px;">${user.username || handle}</div>
+            <div style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); margin-bottom:8px;">@${user.handle} · ${user.is_public ? 'public' : 'private'}</div>
+            <div style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded);">
+              <span style="color:var(--ink); font-weight:700;">${user.follower_count || 0}</span> followers &nbsp;
+              <span style="color:var(--ink); font-weight:700;">${user.following_count || 0}</span> following &nbsp;
+              <span style="color:var(--ink); font-weight:700;">${user.post_count || 0}</span> posts
+            </div>
+          </div>
+          ${followBtnHtml}
+        </div>
+        <div id="profile-posts">
+          ${posts.length === 0 ? '<div class="empty-feed">no posts yet.</div>' : ''}
+        </div>
+      </div>
+    `;
+
+    const container = page.querySelector('#profile-posts');
+    for (const post of posts) {
+      container.appendChild(await renderPost(post));
+    }
+  } catch(e) {
+    page.innerHTML = '<div style="max-width:680px; margin:60px auto; padding:0 48px;"><div class="empty-feed">could not load profile.</div></div>';
+  }
+}
+
+async function toggleFollowProfile(handle, btn) {
+  if (!currentUser) return;
+  const isFollowing = btn.dataset.following === 'true';
+  btn.disabled = true;
+  try {
+    await fetch(API + '/api/' + (isFollowing ? 'unfollow' : 'follow'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from_handle: currentUser.handle, to_handle: handle })
+    });
+    btn.dataset.following = isFollowing ? 'false' : 'true';
+    btn.textContent = isFollowing ? '+ follow' : '✓ following';
+    btn.style.background = isFollowing ? 'none' : 'var(--ink)';
+    btn.style.color = isFollowing ? 'var(--faded)' : 'var(--cream)';
+    btn.style.borderColor = isFollowing ? 'var(--border)' : 'var(--ink)';
+    loadProfileCounts();
+  } catch(e) {}
+  btn.disabled = false;
 }
 
 async function toggleLike(postId, btn) {
@@ -1020,11 +1294,11 @@ async function renderPost(post) {
     ${photoHtml}
     <div class="post-body">
       <div class="post-header">
-        <div class="post-author">
+        <div class="post-author" onclick="viewProfile('${post.handle}')" style="cursor:pointer;">
           <div class="author-dot">${initial}</div>
           <div>
-            <div class="author-name">${post.handle ? '@' + post.handle : '@' + post.username}</div>
-            <div class="author-sub">via MMS · ${post.device || 'phone'}</div>
+            <div class="author-name" style="text-decoration:underline; text-underline-offset:3px;">@${post.handle || post.username}</div>
+            <div class="author-sub">via ${post.source === 'email' ? 'email' : 'MMS'} · ${post.device || 'phone'}</div>
           </div>
         </div>
         <span class="post-time">${time}</span>
@@ -1058,7 +1332,10 @@ async function deletePost(postId, btn) {
 
 // init
 updateNav();
-if (currentUser) showPage('feed');
+if (currentUser) {
+  showPage('feed');
+  checkNotifBadge();
+}
 </script>
 
 <!-- ===== PRIVACY POLICY ===== -->
@@ -1066,7 +1343,7 @@ if (currentUser) showPage('feed');
   <div style="max-width:680px; margin:60px auto; padding:0 48px 80px;">
     <div style="font-family:'Courier Prime',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--faded); margin-bottom:32px; cursor:pointer;" onclick="goHome()">← back</div>
     <h2 style="font-size:28px; font-weight:400; margin-bottom:8px;">Privacy Policy</h2>
-    <p style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); margin-bottom:36px;">Last updated: March 2025</p>
+    <p style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); margin-bottom:36px;">Last updated: March 2026</p>
 
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:24px;">off/on ("we", "us") operates offon.app. This policy explains how we collect and use your information.</p>
 
@@ -1083,7 +1360,7 @@ if (currentUser) showPage('feed');
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">We do not sell your personal data. Your phone number is never displayed publicly. Public posts are visible to all visitors; private posts are visible only to approved followers.</p>
 
     <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Contact</h3>
-    <p style="font-size:15px; line-height:1.85; color:var(--brown);">For privacy questions, contact us at <a href="/cdn-cgi/l/email-protection#c5ada0a9a9aa85aaa3a3aaabeba4b5b5" style="color:var(--ink);"><span class="__cf_email__" data-cfemail="ec8489808083ac838a8a8382c28d9c9c">[email&#160;protected]</span></a>.</p>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown);">For privacy questions, contact us at <a href="/cdn-cgi/l/email-protection#98f0fdf4f4f7d8f7fefef7f6b6f9e8e8" style="color:var(--ink);"><span class="__cf_email__" data-cfemail="92faf7fefefdd2fdf4f4fdfcbcf3e2e2">[email&#160;protected]</span></a>.</p>
   </div>
 </div>
 
@@ -1092,18 +1369,11 @@ if (currentUser) showPage('feed');
   <div style="max-width:680px; margin:60px auto; padding:0 48px 80px;">
     <div style="font-family:'Courier Prime',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--faded); margin-bottom:32px; cursor:pointer;" onclick="goHome()">← back</div>
     <h2 style="font-size:28px; font-weight:400; margin-bottom:8px;">Terms of Service</h2>
-    <p style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); margin-bottom:36px;">Last updated: March 2025</p>
+    <p style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); margin-bottom:36px;">Last updated: March 2026</p>
 
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:24px;">By using off/on, you agree to these terms.</p>
 
     <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">The Service</h3>
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">off/on allows users to post to a personal feed by sending MMS or email. You must register with a valid phone number to use the service.</p>
 
-    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Your Content</h3>
-    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">You retain ownership of content you post. By posting, you grant off/on a license to display your content on the platform. You are responsible for ensuring your content does not violate any laws or third-party rights.</p>
-
-    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Prohibited Use</h3>
-    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">You may not use off/on to post illegal, harmful, or abusive content. We reserve the right to remove content or suspend accounts that violate these terms.</p>
-
-    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">SMS Opt-in</h3>
-    <p style="font-size:15px; line-height:1.85;
+    <h3 style="font-size:16px; marg
