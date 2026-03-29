@@ -577,6 +577,11 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         <div class="form-hint">public feeds appear in discover · private feeds are only visible to your followers</div>
       </div>
       <div class="form-group">
+        <label class="form-label">password</label>
+        <input type="password" class="form-input" id="signup-password" placeholder="min. 6 characters">
+        <div class="form-hint">used to sign in · keep it safe</div>
+      </div>
+      <div class="form-group">
         <label style="display:flex; gap:10px; align-items:flex-start; cursor:pointer;">
           <input type="checkbox" id="signup-consent" style="margin-top:3px; flex-shrink:0;">
           <span class="form-hint" style="margin:0;">By registering, I agree to receive SMS/MMS messages from off/on at the number provided. Message & data rates may apply. Reply STOP to unsubscribe.</span>
@@ -600,9 +605,16 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         <input type="text" class="form-input" id="login-handle" placeholder="@yujin">
       </div>
       <div class="form-group">
-        <label class="form-label">phone number</label>
+        <label class="form-label">password</label>
+        <input type="password" class="form-input" id="login-password" placeholder="your password">
+        <div class="form-hint">first time signing in after the update? enter your phone number below instead</div>
+      </div>
+      <div class="form-group" id="login-phone-group" style="display:none;">
+        <label class="form-label">phone number <span style="color:var(--faded); font-size:10px;">(existing users only)</span></label>
         <input type="tel" class="form-input" id="login-phone" placeholder="+82 10 1234 5678">
-        <div class="form-hint">we verify by matching your phone number</div>
+      </div>
+      <div style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); margin-bottom:12px; cursor:pointer;" onclick="document.getElementById('login-phone-group').style.display = document.getElementById('login-phone-group').style.display === 'none' ? 'block' : 'none'">
+        → existing user without password? click here
       </div>
       <button class="btn-full" onclick="handleLogin()" id="login-btn">sign in</button>
       <div class="auth-switch">new here? <a onclick="showPage('signup')">create account</a></div>
@@ -660,7 +672,7 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         </div>
         <div style="margin-top:16px; padding: 0 12px;">
           <div style="font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--border); margin-bottom:6px;">questions or feedback?</div>
-          <a href="mailto:hello@offon.app" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); text-decoration:none; display:block;">hello@offon.app</a>
+          <a href="/cdn-cgi/l/email-protection#e48c8188888ba48b82828b8aca859494" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); text-decoration:none; display:block;"><span class="__cf_email__" data-cfemail="7c14191010133c131a1a1312521d0c0c">[email&#160;protected]</span></a>
         </div>
       </div>
     </aside>
@@ -698,7 +710,7 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 const API = 'https://web-production-05e09.up.railway.app';
 let currentUser = JSON.parse(localStorage.getItem('offon_user') || 'null');
 
@@ -743,13 +755,20 @@ async function handleSignup() {
   const phone = document.getElementById('signup-phone').value.trim().replace(/\s/g, '');
   const device = document.getElementById('signup-device').value.trim();
   const isPublic = document.getElementById('signup-visibility').value === 'true';
+  const password = document.getElementById('signup-password').value;
 
   msg.className = 'msg';
   msg.textContent = '';
 
-  if (!name || !handle || !phone) {
+  if (!name || !handle || !phone || !password) {
     msg.className = 'msg error';
     msg.textContent = 'please fill in all required fields';
+    return;
+  }
+
+  if (password.length < 6) {
+    msg.className = 'msg error';
+    msg.textContent = 'password must be at least 6 characters';
     return;
   }
 
@@ -767,7 +786,7 @@ async function handleSignup() {
     const res = await fetch(API + '/api/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: name, handle, phone, device, is_public: isPublic })
+      body: JSON.stringify({ username: name, handle, phone, password, device, is_public: isPublic })
     });
 
     const data = await res.json();
@@ -795,14 +814,15 @@ async function handleLogin() {
   const btn = document.getElementById('login-btn');
   const msg = document.getElementById('login-msg');
   const handle = document.getElementById('login-handle').value.trim().replace('@', '');
-  const phone = document.getElementById('login-phone').value.trim().replace(/\s/g, '');
+  const password = document.getElementById('login-password').value;
+  const phone = document.getElementById('login-phone') ? document.getElementById('login-phone').value.trim().replace(/\s/g, '') : '';
 
   msg.className = 'msg';
   msg.textContent = '';
 
-  if (!handle || !phone) {
+  if (!handle || (!password && !phone)) {
     msg.className = 'msg error';
-    msg.textContent = 'please enter your handle and phone number';
+    msg.textContent = 'please enter your handle and password';
     return;
   }
 
@@ -810,18 +830,22 @@ async function handleLogin() {
   btn.textContent = 'signing in...';
 
   try {
-    const res = await fetch(API + '/api/user/' + handle);
+    const res = await fetch(API + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle, password, phone })
+    });
     const data = await res.json();
 
-    if (res.ok) {
-      currentUser = { username: data.username, handle: data.handle, is_public: data.is_public, device: data.device };
+    if (res.ok && data.success) {
+      currentUser = { username: data.user.username, handle: data.user.handle, is_public: data.user.is_public, device: data.user.device };
       localStorage.setItem('offon_user', JSON.stringify(currentUser));
       msg.className = 'msg success';
       msg.textContent = '✓ welcome back! redirecting...';
       setTimeout(() => showPage('feed'), 1200);
     } else {
       msg.className = 'msg error';
-      msg.textContent = 'account not found. check your handle.';
+      msg.textContent = data.error || 'incorrect handle or password';
     }
   } catch (e) {
     msg.className = 'msg error';
@@ -1223,6 +1247,25 @@ async function toggleFollowProfile(handle, btn) {
   btn.disabled = false;
 }
 
+async function reportPost(postId) {
+  if (!currentUser) {
+    alert('please sign in to report posts');
+    return;
+  }
+  const reason = prompt('why are you reporting this post?\n(optional — press OK to submit)');
+  if (reason === null) return; // 취소
+  try {
+    await fetch(API + '/api/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ post_id: postId, reporter_handle: currentUser.handle, reason: reason || 'no reason given' })
+    });
+    alert('report submitted. thank you.');
+  } catch(e) {
+    alert('could not submit report. try again.');
+  }
+}
+
 async function toggleLike(postId, btn) {
   if (!currentUser) return;
   btn.disabled = true;
@@ -1307,7 +1350,7 @@ async function renderPost(post) {
       <div class="post-footer">
         <button class="post-action" id="like-${post.id}" onclick="toggleLike('${post.id}', this)">♡ ${post.likes || 0}</button>
         ${followBtn}
-        ${isOwnPost ? `<button class="post-action" style="margin-left:auto; color:var(--faded);" onclick="deletePost('${post.id}', this)">✕ delete</button>` : ''}
+        ${isOwnPost ? `<button class="post-action" style="margin-left:auto; color:var(--faded);" onclick="deletePost('${post.id}', this)">✕ delete</button>` : `<button class="post-action" style="margin-left:auto; color:var(--border);" onclick="reportPost('${post.id}')">⚑ report</button>`}
       </div>
     </div>
   `;
@@ -1374,6 +1417,4 @@ if (currentUser) {
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:24px;">By using off/on, you agree to these terms.</p>
 
     <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">The Service</h3>
-    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">off/on allows users to post to a personal feed by sending MMS or email. You must register with a valid phone number to use the service.</p>
-
-    <h3 style="font-size:16px; marg
+    <p style="font-size:15px; 
