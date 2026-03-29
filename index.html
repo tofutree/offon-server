@@ -1152,6 +1152,7 @@ async function showFollowList(type) {
 }
 
 
+async function viewProfile(handle) {
   // 본인이면 내 피드로
   if (currentUser && currentUser.handle === handle) {
     showPage('feed');
