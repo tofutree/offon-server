@@ -254,6 +254,15 @@ def follow():
     if to_users:
         to_users[0].reference.update({'follower_count': firestore.Increment(1)})
 
+    # 알림 생성
+    db.collection('notifications').add({
+        'to_handle': to_handle,
+        'from_handle': from_handle,
+        'type': 'follow',
+        'read': False,
+        'created_at': datetime.utcnow()
+    })
+
     return jsonify({'success': True})
 
 
@@ -442,18 +451,84 @@ def like_post(post_id):
     if not handle:
         return jsonify({'error': 'handle required'}), 400
 
-    # 이미 좋아요 눌렀는지 확인
     existing = db.collection('likes').where('post_id', '==', post_id).where('handle', '==', handle).limit(1).get()
     if existing:
-        # 좋아요 취소
         existing[0].reference.delete()
         db.collection('posts').document(post_id).update({'likes': firestore.Increment(-1)})
         return jsonify({'liked': False})
 
-    # 좋아요 추가
     db.collection('likes').add({'post_id': post_id, 'handle': handle, 'created_at': datetime.utcnow()})
     db.collection('posts').document(post_id).update({'likes': firestore.Increment(1)})
+
+    # 알림 생성 (본인 포스트 아닐 때)
+    post = db.collection('posts').document(post_id).get()
+    if post.exists:
+        post_data = post.to_dict()
+        post_owner = post_data.get('handle')
+        if post_owner and post_owner != handle:
+            db.collection('notifications').add({
+                'to_handle': post_owner,
+                'from_handle': handle,
+                'type': 'like',
+                'post_id': post_id,
+                'post_text': post_data.get('text', '')[:50],
+                'read': False,
+                'created_at': datetime.utcnow()
+            })
+
     return jsonify({'liked': True})
+
+
+@app.route('/api/liked_posts/<handle>', methods=['GET'])
+def get_liked_posts(handle):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    likes = db.collection('likes').where('handle', '==', handle).order_by('created_at', direction=firestore.Query.DESCENDING).limit(20).get()
+    post_ids = [l.to_dict()['post_id'] for l in likes]
+
+    posts = []
+    for post_id in post_ids:
+        doc = db.collection('posts').document(post_id).get()
+        if doc.exists:
+            post = doc.to_dict()
+            post['id'] = doc.id
+            post['created_at'] = post['created_at'].isoformat() if post.get('created_at') else None
+            posts.append(post)
+
+    return jsonify({'posts': posts})
+
+
+@app.route('/api/notifications/<handle>', methods=['GET'])
+def get_notifications(handle):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    notifs = db.collection('notifications').where('to_handle', '==', handle).order_by('created_at', direction=firestore.Query.DESCENDING).limit(30).get()
+    result = []
+    for n in notifs:
+        d = n.to_dict()
+        d['id'] = n.id
+        d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
+        result.append(d)
+
+    return jsonify({'notifications': result})
+
+
+@app.route('/api/notifications/read', methods=['POST'])
+def mark_notifications_read(handle=None):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    handle = request.json.get('handle') if request.json else None
+    if not handle:
+        return jsonify({'error': 'handle required'}), 400
+
+    notifs = db.collection('notifications').where('to_handle', '==', handle).where('read', '==', False).get()
+    for n in notifs:
+        n.reference.update({'read': True})
+
+    return jsonify({'success': True})
 
 
 
