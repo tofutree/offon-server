@@ -607,14 +607,6 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
       <div class="form-group">
         <label class="form-label">password</label>
         <input type="password" class="form-input" id="login-password" placeholder="your password">
-        <div class="form-hint">first time signing in after the update? enter your phone number below instead</div>
-      </div>
-      <div class="form-group" id="login-phone-group" style="display:none;">
-        <label class="form-label">phone number <span style="color:var(--faded); font-size:10px;">(existing users only)</span></label>
-        <input type="tel" class="form-input" id="login-phone" placeholder="+82 10 1234 5678">
-      </div>
-      <div style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); margin-bottom:12px; cursor:pointer;" onclick="document.getElementById('login-phone-group').style.display = document.getElementById('login-phone-group').style.display === 'none' ? 'block' : 'none'">
-        → existing user without password? click here
       </div>
       <button class="btn-full" onclick="handleLogin()" id="login-btn">sign in</button>
       <div class="auth-switch">new here? <a onclick="showPage('signup')">create account</a></div>
@@ -719,6 +711,11 @@ function showPage(name) {
   document.getElementById('page-' + name).classList.add('active');
   window.scrollTo(0, 0);
   updateNav();
+  // 검색 결과 초기화
+  const searchResult = document.getElementById('search-result');
+  const searchHandle = document.getElementById('search-handle');
+  if (searchResult) searchResult.innerHTML = '';
+  if (searchHandle) searchHandle.value = '';
   if (name === 'feed') loadFeed('mine');
   if (name === 'discover') loadDiscover();
 }
@@ -1197,7 +1194,7 @@ async function viewProfile(handle) {
 
     page.innerHTML = `
       <div style="max-width:680px; margin:60px auto; padding:0 48px 80px;">
-        <div style="font-family:'Courier Prime',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--faded); margin-bottom:32px; cursor:pointer;" onclick="history.back(); showPage('discover')">← back</div>
+        <div style="font-family:'Courier Prime',monospace; font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--faded); margin-bottom:32px; cursor:pointer;" onclick="showPage(currentUser ? 'feed' : 'discover')">← back</div>
         <div style="display:flex; align-items:center; gap:20px; margin-bottom:32px;">
           <div style="width:56px; height:56px; border-radius:50%; background:var(--warm); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:'Courier Prime',monospace; font-size:22px; color:var(--faded); ${user.profile_photo ? 'background-image:url(' + user.profile_photo + '); background-size:cover; background-position:center;' : ''}">
             ${user.profile_photo ? '' : (user.username || 'A')[0].toUpperCase()}
