@@ -7,6 +7,7 @@ import os
 import json
 import random
 import string
+import hashlib
 import boto3
 from botocore.client import Config
 from datetime import datetime
@@ -36,6 +37,9 @@ R2_PUBLIC_URL = os.environ.get('R2_PUBLIC_URL', '')
 
 def generate_email_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
 def upload_image_to_r2(file_obj, filename, content_type):
     try:
@@ -170,11 +174,15 @@ def register():
     phone = data.get('phone')
     username = data.get('username')
     handle = data.get('handle')
+    password = data.get('password')
     is_public = data.get('is_public', True)
     device = data.get('device', 'phone')
 
-    if not phone or not username or not handle:
-        return jsonify({'error': 'phone, username, handle required'}), 400
+    if not phone or not username or not handle or not password:
+        return jsonify({'error': 'phone, username, handle, password required'}), 400
+
+    if len(password) < 6:
+        return jsonify({'error': 'password must be at least 6 characters'}), 400
 
     existing = db.collection('users').where('handle', '==', handle).limit(1).get()
     if existing:
@@ -184,6 +192,7 @@ def register():
         'phone': phone,
         'username': username,
         'handle': handle,
+        'password_hash': hash_password(password),
         'is_public': is_public,
         'device': device,
         'post_count': 0,
@@ -200,8 +209,80 @@ def register():
         'success': True,
         'user_id': doc_ref[1].id,
         'email_address': email_address,
-        'message': f'Welcome to off/on, {username}! Text {OFFON_NUMBER} or email {email_address} to post.'
+        'message': f'Welcome to off/on, {username}!'
     })
+
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    data = request.json
+    handle = data.get('handle', '').strip().replace('@', '')
+    password = data.get('password', '')
+
+    if not handle or not password:
+        return jsonify({'error': 'handle and password required'}), 400
+
+    users = db.collection('users').where('handle', '==', handle).limit(1).get()
+    if not users:
+        return jsonify({'error': 'user not found'}), 404
+
+    user = users[0].to_dict()
+
+    # 기존 유저 (비밀번호 없는) → 전화번호로 검증
+    if not user.get('password_hash'):
+        phone = data.get('phone', '')
+        if not phone or user.get('phone') != phone.replace(' ', ''):
+            return jsonify({'error': 'invalid credentials'}), 401
+        # 비밀번호 설정해줌
+        users[0].reference.update({'password_hash': hash_password(password)})
+    else:
+        if user['password_hash'] != hash_password(password):
+            return jsonify({'error': 'incorrect password'}), 401
+
+    user.pop('phone', None)
+    user.pop('password_hash', None)
+    user['created_at'] = user['created_at'].isoformat() if user.get('created_at') else None
+    if user.get('last_posted'):
+        user['last_posted'] = user['last_posted'].isoformat()
+
+    return jsonify({'success': True, 'user': user})
+
+
+@app.route('/api/report', methods=['POST'])
+def report_post():
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    data = request.json
+    post_id = data.get('post_id')
+    reporter = data.get('reporter_handle', 'anonymous')
+    reason = data.get('reason', 'no reason given')
+
+    if not post_id:
+        return jsonify({'error': 'post_id required'}), 400
+
+    post = db.collection('posts').document(post_id).get()
+    if not post.exists:
+        return jsonify({'error': 'post not found'}), 404
+
+    post_data = post.to_dict()
+
+    db.collection('reports').add({
+        'post_id': post_id,
+        'reporter': reporter,
+        'reason': reason,
+        'post_handle': post_data.get('handle'),
+        'post_text': post_data.get('text', '')[:200],
+        'created_at': datetime.utcnow(),
+        'resolved': False
+    })
+
+    return jsonify({'success': True})
+
+
 
 
 @app.route('/api/user/<handle>', methods=['GET'])
