@@ -623,11 +623,11 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         <div class="profile-name" id="profile-name">—</div>
         <div class="profile-handle" id="profile-handle">@—</div>
         <div style="display:flex; gap:16px; margin: 10px 0 4px;">
-          <div style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded);">
-            <span id="follower-count" style="color:var(--ink); font-weight:700;">0</span> followers
+          <div style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); cursor:pointer;" onclick="showFollowList('followers')">
+            <span id="follower-count" style="color:var(--ink); font-weight:700; text-decoration:underline; text-underline-offset:3px;">0</span> followers
           </div>
-          <div style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded);">
-            <span id="following-count" style="color:var(--ink); font-weight:700;">0</span> following
+          <div style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); cursor:pointer;" onclick="showFollowList('following')">
+            <span id="following-count" style="color:var(--ink); font-weight:700; text-decoration:underline; text-underline-offset:3px;">0</span> following
           </div>
         </div>
         <div class="profile-mms">
@@ -650,8 +650,6 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         <button class="sn-item active" onclick="loadFeed('mine', this)">my posts</button>
         <button class="sn-item" onclick="loadFeed('liked', this)">♡ liked posts</button>
         <button class="sn-item" onclick="loadNotifications(this)">🔔 notifications <span id="notif-badge" style="background:var(--rust); color:white; border-radius:10px; padding:1px 6px; font-size:10px; display:none;"></span></button>
-        <button class="sn-item" onclick="showFollowList('followers')">followers</button>
-        <button class="sn-item" onclick="showFollowList('following')">following</button>
         <button class="sn-item" onclick="loadFeed('following', this)">following feed</button>
         <button class="sn-item" onclick="loadFeed('public', this)">discover</button>
         <div style="margin-top:16px; padding:0 12px;">
