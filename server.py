@@ -251,7 +251,56 @@ def login():
     return jsonify({'success': True, 'user': user})
 
 
-@app.route('/api/report', methods=['POST'])
+@app.route('/api/user/<handle>/delete', methods=['DELETE'])
+def delete_account(handle):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    # 유저 찾기
+    users = db.collection('users').where('handle', '==', handle).limit(1).get()
+    if not users:
+        return jsonify({'error': 'user not found'}), 404
+
+    user_doc = users[0]
+
+    # 포스트 삭제
+    posts = db.collection('posts').where('handle', '==', handle).get()
+    for post in posts:
+        db.collection('comments').where('post_id', '==', post.id).get()
+        for comment in db.collection('comments').where('post_id', '==', post.id).get():
+            comment.reference.delete()
+        post.reference.delete()
+
+    # 댓글 삭제
+    comments = db.collection('comments').where('handle', '==', handle).get()
+    for comment in comments:
+        comment.reference.delete()
+
+    # 팔로우 관계 삭제
+    follows_from = db.collection('follows').where('from_handle', '==', handle).get()
+    for f in follows_from:
+        f.reference.delete()
+    follows_to = db.collection('follows').where('to_handle', '==', handle).get()
+    for f in follows_to:
+        f.reference.delete()
+
+    # 좋아요 삭제
+    likes = db.collection('likes').where('handle', '==', handle).get()
+    for like in likes:
+        like.reference.delete()
+
+    # 알림 삭제
+    notifs = db.collection('notifications').where('to_handle', '==', handle).get()
+    for n in notifs:
+        n.reference.delete()
+
+    # 유저 삭제
+    user_doc.reference.delete()
+
+    return jsonify({'success': True})
+
+
+
 def report_post():
     if not db:
         return jsonify({'error': 'db not ready'}), 500
