@@ -532,7 +532,7 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         <span onclick="showPage('terms')" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Terms of Service</span>
       </div>
     </div>
-    <a href="/cdn-cgi/l/email-protection#c3aba6afafac83aca5a5acadeda2b3b3" style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); text-decoration:none; letter-spacing:0.04em;"><span class="__cf_email__" data-cfemail="b6ded3dadad9f6d9d0d0d9d898d7c6c6">[email&#160;protected]</span></a>
+    <a id="footer-email-landing" style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded); text-decoration:none; letter-spacing:0.04em;"></a>
   </footer>
 </div>
 
@@ -602,7 +602,7 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
       <div class="msg" id="login-msg"></div>
       <div class="form-group">
         <label class="form-label">handle</label>
-        <input type="text" class="form-input" id="login-handle" placeholder="@yujin">
+        <input type="text" class="form-input" id="login-handle" placeholder="@offon">
       </div>
       <div class="form-group">
         <label class="form-label">password</label>
@@ -648,9 +648,9 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
       </div>
       <div class="sidebar-nav">
         <button class="sn-item active" onclick="loadFeed('mine', this)">my posts</button>
-        <button class="sn-item" onclick="loadNotifications(this)">🔔 notifications <span id="notif-badge" style="background:var(--rust); color:white; border-radius:10px; padding:1px 6px; font-size:10px; display:none;"></span></button>
         <button class="sn-item" onclick="loadFeed('public', this)">discover</button>
         <button class="sn-item" onclick="loadFeed('following', this)">following feed</button>
+        <button class="sn-item" onclick="loadNotifications(this)">🔔 notifications <span id="notif-badge" style="background:var(--rust); color:white; border-radius:10px; padding:1px 6px; font-size:10px; display:none;"></span></button>
         <button class="sn-item" onclick="loadFeed('liked', this)">♡ liked posts</button>
         <div style="margin-top:16px; padding:0 12px;">
           <div style="font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--border); margin-bottom:8px;">find a user</div>
@@ -662,7 +662,7 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         </div>
         <div style="margin-top:16px; padding: 0 12px;">
           <div style="font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--border); margin-bottom:6px;">questions or feedback?</div>
-          <a href="mailto:hello@offon.app" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); text-decoration:none; display:block;">hello@offon.app</a>
+          <a id="sidebar-email" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); text-decoration:none; display:block;"></a>
         </div>
         <div style="margin-top:12px; padding:0 12px; display:flex; gap:12px;">
           <span onclick="showPage('privacy')" style="font-family:'Courier Prime',monospace; font-size:10px; color:var(--border); cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Privacy</span>
@@ -707,7 +707,20 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
+// 이메일 주소 JS로 렌더링 (Cloudflare 암호화 방지)
+const E = 'hello' + '@' + 'offon.app';
+const setEmail = (id, style) => {
+  const el = document.getElementById(id);
+  if (el) { el.href = 'mailto:' + E; el.textContent = E; }
+};
+document.addEventListener('DOMContentLoaded', () => {
+  setEmail('footer-email-landing');
+  setEmail('sidebar-email');
+  setEmail('privacy-email');
+  setEmail('terms-email');
+});
+
 const API = 'https://web-production-05e09.up.railway.app';
 let currentUser = JSON.parse(localStorage.getItem('offon_user') || 'null');
 
@@ -723,7 +736,20 @@ function showPage(name) {
   if (searchHandle) searchHandle.value = '';
   if (name === 'feed') loadFeed('mine');
   if (name === 'discover') loadDiscover();
+  // 브라우저 히스토리 업데이트
+  if (history.state?.page !== name) {
+    history.pushState({ page: name }, '', '#' + name);
+  }
 }
+
+// 브라우저 뒤로가기 처리
+window.addEventListener('popstate', (e) => {
+  if (e.state?.page) {
+    showPage(e.state.page);
+  } else {
+    showPage(currentUser ? 'feed' : 'landing');
+  }
+});
 
 function goHome() {
   if (currentUser) showPage('feed');
@@ -1543,7 +1569,7 @@ if (currentUser) {
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">We do not sell your personal data. Your phone number is never displayed publicly. Public posts are visible to all visitors; private posts are visible only to approved followers.</p>
 
     <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Contact</h3>
-    <p style="font-size:15px; line-height:1.85; color:var(--brown);">For privacy questions, contact us at <a href="mailto:hello@offon.app" style="color:var(--ink);">hello@offon.app</a>.</p>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown);">For privacy questions, contact us at <a id="privacy-email" style="color:var(--ink);"></a>.</p>
   </div>
 </div>
 
@@ -1569,10 +1595,13 @@ if (currentUser) {
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">By registering your phone number, you consent to receive SMS/MMS messages from off/on. These messages are limited to post confirmations. Reply STOP to unsubscribe.</p>
 
     <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Account Deletion</h3>
-    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">You may delete your account at any time from your profile settings. All your posts and data will be permanently deleted.</p>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">You may delete your account at any time from your profile settings. All your posts, comments, and data will be permanently deleted.</p>
+
+    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Changes</h3>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">We may update these terms at any time. Continued use of off/on after changes means you accept the updated terms.</p>
 
     <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Contact</h3>
-    <p style="font-size:15px; line-height:1.85; color:var(--brown);">Questions? <a href="mailto:hello@offon.app" style="color:var(--ink);">hello@offon.app</a></p>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown);">Questions? <a id="terms-email" style="color:var(--ink);"></a></p>
   </div>
 </div>
 
