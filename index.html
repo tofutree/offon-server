@@ -1046,6 +1046,17 @@ async function loadNotifications(btn) {
           </div>
           <span style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--border);">${time}</span>
         `;
+      } else if (n.type === 'comment') {
+        div.innerHTML = `
+          <span style="font-size:18px;">💬</span>
+          <div style="flex:1;">
+            <div style="font-family:'Courier Prime',monospace; font-size:13px; color:var(--ink);">
+              <strong style="cursor:pointer; text-decoration:underline; text-underline-offset:3px;" onclick="viewProfile('${n.from_handle}')">@${n.from_handle}</strong> commented on your post
+            </div>
+            ${n.comment_text ? `<div style="font-size:12px; color:var(--faded); margin-top:3px;">"${n.comment_text}..."</div>` : ''}
+          </div>
+          <span style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--border);">${time}</span>
+        `;
       } else if (n.type === 'follow') {
         div.innerHTML = `
           <span style="font-size:18px;">👤</span>
@@ -1345,12 +1356,112 @@ async function renderPost(post) {
       ${post.text ? `<div class="post-text">${post.text}</div>` : ''}
       <div class="post-footer">
         <button class="post-action" id="like-${post.id}" onclick="toggleLike('${post.id}', this)">♡ ${post.likes || 0}</button>
+        <button class="post-action" onclick="toggleComments('${post.id}')">💬 comments</button>
         ${followBtn}
         ${isOwnPost ? `<button class="post-action" style="margin-left:auto; color:var(--faded);" onclick="deletePost('${post.id}', this)">✕ delete</button>` : `<button class="post-action" style="margin-left:auto; color:var(--border);" onclick="reportPost('${post.id}')">⚑ report</button>`}
+      </div>
+      <div id="comments-${post.id}" style="display:none; border-top:1px solid var(--border); padding:16px 20px 4px;">
+        <div id="comments-list-${post.id}"><div style="font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded);">loading...</div></div>
+        ${currentUser ? `
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <input type="text" id="comment-input-${post.id}" placeholder="add a comment..." maxlength="300"
+            style="flex:1; font-family:'Courier Prime',monospace; font-size:13px; background:var(--cream); border:1px solid var(--border); padding:8px 12px; color:var(--ink); outline:none;"
+            onkeydown="if(event.key==='Enter') submitComment('${post.id}')">
+          <button onclick="submitComment('${post.id}')" style="font-family:'Courier Prime',monospace; font-size:11px; background:var(--ink); color:var(--cream); border:none; padding:8px 14px; cursor:pointer; letter-spacing:0.06em;">post</button>
+        </div>` : `<div style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); margin-top:10px;"><a onclick="showPage('login')" style="cursor:pointer; text-decoration:underline;">sign in</a> to comment</div>`}
       </div>
     </div>
   `;
   return card;
+}
+
+async function toggleComments(postId) {
+  const section = document.getElementById('comments-' + postId);
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    await loadComments(postId);
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+async function loadComments(postId) {
+  const list = document.getElementById('comments-list-' + postId);
+  try {
+    const res = await fetch(API + '/api/post/' + postId + '/comments');
+    const data = await res.json();
+    const comments = data.comments || [];
+
+    if (comments.length === 0) {
+      list.innerHTML = '<div style="font-family:\'Courier Prime\',monospace; font-size:12px; color:var(--faded); padding:4px 0 8px;">no comments yet.</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    comments.forEach(c => {
+      const isOwn = currentUser && currentUser.handle === c.handle;
+      const time = c.created_at ? new Date(c.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+      const div = document.createElement('div');
+      div.style.cssText = 'padding:8px 0; border-bottom:1px solid var(--border); display:flex; align-items:flex-start; gap:10px;';
+      div.innerHTML = `
+        <div style="flex:1;">
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;">
+            <span style="font-family:'Courier Prime',monospace; font-size:12px; font-weight:700; color:var(--ink); cursor:pointer; text-decoration:underline; text-underline-offset:3px;" onclick="viewProfile('${c.handle}')">@${c.handle}</span>
+            <span style="font-family:'Courier Prime',monospace; font-size:10px; color:var(--border);">${time}</span>
+          </div>
+          <div style="font-size:14px; line-height:1.6; color:var(--brown);">${c.text}</div>
+        </div>
+        <div style="display:flex; gap:8px; flex-shrink:0;">
+          ${isOwn ? `<button onclick="deleteComment('${c.id}', '${postId}')" style="font-family:'Courier Prime',monospace; font-size:10px; color:var(--faded); background:none; border:none; cursor:pointer;">✕</button>` : `<button onclick="reportComment('${c.id}')" style="font-family:'Courier Prime',monospace; font-size:10px; color:var(--border); background:none; border:none; cursor:pointer;">⚑</button>`}
+        </div>
+      `;
+      list.appendChild(div);
+    });
+  } catch(e) {
+    list.innerHTML = '<div style="font-family:\'Courier Prime\',monospace; font-size:12px; color:var(--faded);">could not load comments.</div>';
+  }
+}
+
+async function submitComment(postId) {
+  if (!currentUser) return;
+  const input = document.getElementById('comment-input-' + postId);
+  const text = input.value.trim();
+  if (!text) return;
+
+  try {
+    const res = await fetch(API + '/api/post/' + postId + '/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle: currentUser.handle, text })
+    });
+    if (res.ok) {
+      input.value = '';
+      await loadComments(postId);
+    }
+  } catch(e) {}
+}
+
+async function deleteComment(commentId, postId) {
+  if (!currentUser) return;
+  if (!confirm('delete this comment?')) return;
+  try {
+    await fetch(API + '/api/comment/' + commentId + '?handle=' + currentUser.handle, { method: 'DELETE' });
+    await loadComments(postId);
+  } catch(e) {}
+}
+
+async function reportComment(commentId) {
+  if (!currentUser) { alert('please sign in to report'); return; }
+  const reason = prompt('why are you reporting this comment?\n(optional)');
+  if (reason === null) return;
+  try {
+    await fetch(API + '/api/comment/' + commentId + '/report', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reporter_handle: currentUser.handle, reason: reason || 'no reason given' })
+    });
+    alert('report submitted. thank you.');
+  } catch(e) {}
 }
 
 async function deletePost(postId, btn) {
