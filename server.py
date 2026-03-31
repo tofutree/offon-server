@@ -384,7 +384,112 @@ def is_following():
     return jsonify({'is_following': len(existing) > 0})
 
 
-@app.route('/api/post/<post_id>', methods=['DELETE'])
+@app.route('/api/post/<post_id>/comments', methods=['GET'])
+def get_comments(post_id):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    comments = db.collection('comments').where('post_id', '==', post_id).get()
+    result = []
+    for c in comments:
+        d = c.to_dict()
+        d['id'] = c.id
+        d['created_at'] = d['created_at'].isoformat() if d.get('created_at') else None
+        result.append(d)
+    result.sort(key=lambda x: x.get('created_at', ''))
+    return jsonify({'comments': result})
+
+
+@app.route('/api/post/<post_id>/comments', methods=['POST'])
+def add_comment(post_id):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    data = request.json
+    handle = data.get('handle')
+    text = data.get('text', '').strip()
+
+    if not handle or not text:
+        return jsonify({'error': 'handle and text required'}), 400
+
+    if len(text) > 300:
+        return jsonify({'error': 'comment too long (max 300 chars)'}), 400
+
+    comment = {
+        'post_id': post_id,
+        'handle': handle,
+        'text': text,
+        'created_at': datetime.utcnow()
+    }
+    doc_ref = db.collection('comments').add(comment)
+
+    # 포스트 작성자에게 알림
+    post = db.collection('posts').document(post_id).get()
+    if post.exists:
+        post_data = post.to_dict()
+        post_owner = post_data.get('handle')
+        if post_owner and post_owner != handle:
+            db.collection('notifications').add({
+                'to_handle': post_owner,
+                'from_handle': handle,
+                'type': 'comment',
+                'post_id': post_id,
+                'comment_text': text[:50],
+                'read': False,
+                'created_at': datetime.utcnow()
+            })
+
+    return jsonify({'success': True, 'comment_id': doc_ref[1].id})
+
+
+@app.route('/api/comment/<comment_id>', methods=['DELETE'])
+def delete_comment(comment_id):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    handle = request.args.get('handle')
+    comment_ref = db.collection('comments').document(comment_id)
+    comment = comment_ref.get()
+
+    if not comment.exists:
+        return jsonify({'error': 'comment not found'}), 404
+
+    if comment.to_dict().get('handle') != handle:
+        return jsonify({'error': 'unauthorized'}), 403
+
+    comment_ref.delete()
+    return jsonify({'success': True})
+
+
+@app.route('/api/comment/<comment_id>/report', methods=['POST'])
+def report_comment(comment_id):
+    if not db:
+        return jsonify({'error': 'db not ready'}), 500
+
+    data = request.json
+    reporter = data.get('reporter_handle', 'anonymous')
+    reason = data.get('reason', 'no reason given')
+
+    comment = db.collection('comments').document(comment_id).get()
+    if not comment.exists:
+        return jsonify({'error': 'comment not found'}), 404
+
+    comment_data = comment.to_dict()
+    db.collection('reports').add({
+        'type': 'comment',
+        'comment_id': comment_id,
+        'reporter': reporter,
+        'reason': reason,
+        'comment_handle': comment_data.get('handle'),
+        'comment_text': comment_data.get('text', '')[:200],
+        'created_at': datetime.utcnow(),
+        'resolved': False
+    })
+
+    return jsonify({'success': True})
+
+
+
 def delete_post(post_id):
     if not db:
         return jsonify({'error': 'db not ready'}), 500
