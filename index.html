@@ -648,10 +648,10 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
       </div>
       <div class="sidebar-nav">
         <button class="sn-item active" onclick="loadFeed('mine', this)">my posts</button>
-        <button class="sn-item" onclick="loadFeed('liked', this)">♡ liked posts</button>
         <button class="sn-item" onclick="loadNotifications(this)">🔔 notifications <span id="notif-badge" style="background:var(--rust); color:white; border-radius:10px; padding:1px 6px; font-size:10px; display:none;"></span></button>
-        <button class="sn-item" onclick="loadFeed('following', this)">following feed</button>
         <button class="sn-item" onclick="loadFeed('public', this)">discover</button>
+        <button class="sn-item" onclick="loadFeed('following', this)">following feed</button>
+        <button class="sn-item" onclick="loadFeed('liked', this)">♡ liked posts</button>
         <div style="margin-top:16px; padding:0 12px;">
           <div style="font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--border); margin-bottom:8px;">find a user</div>
           <div style="display:flex; gap:6px;">
@@ -662,7 +662,14 @@ footer { padding: 28px 48px; border-top: 1px solid var(--border); display: flex;
         </div>
         <div style="margin-top:16px; padding: 0 12px;">
           <div style="font-family:'Courier Prime',monospace; font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--border); margin-bottom:6px;">questions or feedback?</div>
-          <a href="/cdn-cgi/l/email-protection#e48c8188888ba48b82828b8aca859494" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); text-decoration:none; display:block;"><span class="__cf_email__" data-cfemail="7c14191010133c131a1a1312521d0c0c">[email&#160;protected]</span></a>
+          <a href="mailto:hello@offon.app" style="font-family:'Courier Prime',monospace; font-size:11px; color:var(--faded); text-decoration:none; display:block;">hello@offon.app</a>
+        </div>
+        <div style="margin-top:12px; padding:0 12px; display:flex; gap:12px;">
+          <span onclick="showPage('privacy')" style="font-family:'Courier Prime',monospace; font-size:10px; color:var(--border); cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Privacy</span>
+          <span onclick="showPage('terms')" style="font-family:'Courier Prime',monospace; font-size:10px; color:var(--border); cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Terms</span>
+        </div>
+        <div style="margin-top:12px; padding:0 12px;">
+          <button onclick="deleteAccount()" style="font-family:'Courier Prime',monospace; font-size:10px; color:var(--border); background:none; border:none; cursor:pointer; letter-spacing:0.04em; padding:0;">delete account</button>
         </div>
       </div>
     </aside>
@@ -1254,6 +1261,32 @@ async function toggleFollowProfile(handle, btn) {
   btn.disabled = false;
 }
 
+async function deleteAccount() {
+  if (!currentUser) return;
+  const confirm1 = confirm('are you sure you want to delete your account?\n\nall your posts, comments, and data will be permanently deleted.');
+  if (!confirm1) return;
+  const confirm2 = confirm('this cannot be undone. delete account?');
+  if (!confirm2) return;
+
+  try {
+    const res = await fetch(API + '/api/user/' + currentUser.handle + '/delete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ handle: currentUser.handle })
+    });
+    if (res.ok) {
+      localStorage.removeItem('offon_user');
+      currentUser = null;
+      alert('your account has been deleted. goodbye.');
+      showPage('landing');
+    } else {
+      alert('could not delete account. try again.');
+    }
+  } catch(e) {
+    alert('connection error. try again.');
+  }
+}
+
 async function reportPost(postId) {
   if (!currentUser) {
     alert('please sign in to report posts');
@@ -1510,7 +1543,7 @@ if (currentUser) {
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">We do not sell your personal data. Your phone number is never displayed publicly. Public posts are visible to all visitors; private posts are visible only to approved followers.</p>
 
     <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Contact</h3>
-    <p style="font-size:15px; line-height:1.85; color:var(--brown);">For privacy questions, contact us at <a href="/cdn-cgi/l/email-protection#98f0fdf4f4f7d8f7fefef7f6b6f9e8e8" style="color:var(--ink);"><span class="__cf_email__" data-cfemail="92faf7fefefdd2fdf4f4fdfcbcf3e2e2">[email&#160;protected]</span></a>.</p>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown);">For privacy questions, contact us at <a href="mailto:hello@offon.app" style="color:var(--ink);">hello@offon.app</a>.</p>
   </div>
 </div>
 
@@ -1524,4 +1557,24 @@ if (currentUser) {
     <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:24px;">By using off/on, you agree to these terms.</p>
 
     <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">The Service</h3>
-    <p style="font-size:15px; 
+    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">off/on allows users to post to a personal feed by sending MMS or email. You must register with a valid phone number to use the service.</p>
+
+    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Your Content</h3>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">You retain ownership of content you post. By posting, you grant off/on a license to display your content on the platform. You are responsible for ensuring your content does not violate any laws or third-party rights.</p>
+
+    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Prohibited Use</h3>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">You may not use off/on to post illegal, harmful, or abusive content. We reserve the right to remove content or suspend accounts that violate these terms.</p>
+
+    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">SMS Opt-in</h3>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">By registering your phone number, you consent to receive SMS/MMS messages from off/on. These messages are limited to post confirmations. Reply STOP to unsubscribe.</p>
+
+    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Account Deletion</h3>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown); margin-bottom:16px;">You may delete your account at any time from your profile settings. All your posts and data will be permanently deleted.</p>
+
+    <h3 style="font-size:16px; margin-bottom:10px; margin-top:32px;">Contact</h3>
+    <p style="font-size:15px; line-height:1.85; color:var(--brown);">Questions? <a href="mailto:hello@offon.app" style="color:var(--ink);">hello@offon.app</a></p>
+  </div>
+</div>
+
+</body>
+</html>
